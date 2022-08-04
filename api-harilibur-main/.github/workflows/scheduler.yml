@@ -1,0 +1,40 @@
+name: Ambil data daftar hari libur
+on:
+  schedule:
+    # Jalankan setiap tanggal 1 Januari.
+    - cron: '0 0 1 1 *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '>=14.17.0'
+    - name: Install dependecies
+      run: npm ci
+    - name: Ambil data daftar hari libur
+      run: npm run scrape
+    - name: Commit files
+      run: |
+        git config --local user.email ${{ secrets.MY_EMAIL }}
+        git config --local user.name "Satya Kresna on Github Actions"
+        git add .
+        git commit -m "chore: update scrape data" -a
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+    - name: Deploy to production
+      uses: amondnet/vercel-action@v19
+      id: vercel-action-production
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        vercel-org-id: ${{ secrets.ORG_ID }}
+        vercel-project-id: ${{ secrets.PROJECT_ID }}
+        vercel-args: '--prod'
